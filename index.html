@@ -6,9 +6,13 @@
     <title>JavaScript and DOM API</title>
     <link rel="stylesheet" type="text/css" href="game.css" media="all" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <body>
-
+    <script>var Bear;</script>
+    <body onload="start();">
+        <script src="game.js"></script>
+        <noscript>
+         Warning - JavaScript is Disabled.
+         For full functionality of this page, it is necessary to enable JavaScript.
+        </noscript>
         <div id="title">
             <h1>Help the bear escape the bees !</h1>
             <p>Bear tries to avoid being stung by <input type="text" id="nbBees" value="1" size="3"> bees by running and jumping. The objective is to have as less stings as possible!</p>
@@ -31,7 +35,7 @@
 
         </div>
         <div id="board">
-            <img src="./images/bear.gif" id="bear" alt="bear">
+            <img src="bear.gif" id="bear" alt="bear">
         </div>
     </body>
 
