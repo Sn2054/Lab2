@@ -5,6 +5,7 @@ function Bear() {
     this.x = this.htmlElement.offsetLeft;
     this.y = this.htmlElement.offsetTop;
     this.move = function (xDir, yDir) {
+        this.fitBounds();
         this.x += this.dBear * xDir;
         this.y += this.dBear * yDir;
         this.display();
@@ -12,7 +13,7 @@ function Bear() {
     this.display = function () {
         this.htmlElement.style.left = this.x + "px";
         this.htmlElement.style.top = this.y + "px";
-        this.htmlElement.style.display = "absolute";
+        this.htmlElement.style.display = "block";
     };
     this.fitBounds = function () {
         let parent = this.htmlElement.parentElement;
@@ -27,25 +28,8 @@ function Bear() {
         if (this.y < 0) this.y = 0;
         if (this.y > h - ih) this.y = h - ih;
     };
-    this.move = function (xDir, yDir) {
-        this.fitBounds(); //we add this instruction to keep bear within board
-        this.x += this.dBear * xDir;
-        this.y += this.dBear * yDir;
-        this.display();
-    }
 }
-function start() {
-    //create bear
-    bear = new Bear();
-    // Add an event listener to the keypress event.
-    document.addEventListener("keydown", moveBear, false);
-    //create new array for bees
-    bees = new Array();
-    //create bees
-    makeBees();
-    updateBees();
-}
-// Handle keyboad events 
+// Handle keyboad events
 // to move the bear
 function moveBear(e) {
     //codes of the four keys
@@ -64,9 +48,29 @@ function moveBear(e) {
     } // up key
     if (e.keyCode == KEYDOWN) {
         bear.move(0, 1)
-    } // down
+    } // down key
 }
-
+function start() {
+    clearTimeout(updateTimer); //reinit update timer
+    //reset score and duration
+    document.getElementById("hits").innerHTML = 0;
+    document.getElementById("duration").innerHTML = "0"; //delete all existing bees //delete exisiting bees
+    if (typeof bees !== 'undefined') {
+        deleteBees();
+    }
+    //create bear
+    bear = new Bear();
+    // Add an event listener to the keypress event.
+    document.addEventListener("keydown", moveBear, false);
+    //create new array for bees
+    bees = new Array();
+    //create bees
+    makeBees();
+    //create a timer for updating position of bees
+    updateBees();
+    //take start time
+    lastStingTime = new Date();
+}
 class Bee {
     constructor(beeNumber) {
         //the HTML element corresponding to the IMG of the bee
@@ -84,8 +88,8 @@ class Bee {
             this.display();
         };
         this.display = function () {
-            //adjust position of bee and display it
-            this.fitBounds();//add this to adjust to bounds
+            //ajust position of bee and display it
+            this.fitBounds();
             this.htmlElement.style.left = this.x + "px";
             this.htmlElement.style.top = this.y + "px";
             this.htmlElement.style.display = "block";
@@ -108,6 +112,18 @@ class Bee {
             if (this.y > h - ih)
                 this.y = h - ih;
         };
+        this.remove = function () {
+            //remove the bee and delete its IMG
+            if (typeof bees !== 'undefined') {
+                //remove element from bees array
+                const index = bees.indexOf(this);
+                if (index > -1) {
+                    bees.splice(index, 1);
+                }
+            }
+            //remove element from div
+            this.htmlElement.parentNode.removeChild(this.htmlElement);
+        };
     }
 }
 function createBeeImg(wNum) {
@@ -127,35 +143,46 @@ function createBeeImg(wNum) {
     //add the IMG element to the DOM as a child of the board div
     img.style.position = "absolute";
     boardDiv.appendChild(img);
-    //set initial position 
+    //set initial position  
     let x = getRandomInt(boardDivW);
     let y = getRandomInt(boardDivH);
     img.style.left = (boardDivX + x) + "px";
     img.style.top = (y) + "px";
-    //return the img object
+    //retrun the img object
     return img;
+}
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
 }
 function makeBees() {
     //get number of bees specified by the user
     let nbBees = document.getElementById("nbBees").value;
-    nbBees = Number(nbBees); //try converting the content of the input to a number 
-    if (isNaN(nbBees)) { //check that the input field contains a valid number
+    nbBees = Number(nbBees);
+    if (isNaN(nbBees)) {
         window.alert("Invalid number of bees");
         return;
     }
-    //create bees 
+    //create bees
     let i = 1;
     while (i <= nbBees) {
         var num = i;
-        var bee = new Bee(num); //create object and its IMG element
+        //create object and its IMG element
+        var bee = new Bee(num);
         bee.display(); //display the bee
-        bees.push(bee); //add the bee object to the bees array
+        bees.push(bee); ////store the bee object in the bees array
         i++;
     }
 }
-function moveBees() {//get speed input field value
+function deleteBees() {
+    //delete all bees
+    while (bees[0]) {
+        bees[0].remove();
+    }
+}
+function moveBees() {
+    //get speed input field value
     let speed = document.getElementById("speedBees").value;
-    //move each bee to a random location
+    //move  each bee to a random location
     for (let i = 0; i < bees.length; i++) {
         let dx = getRandomInt(2 * speed) - speed;
         let dy = getRandomInt(2 * speed) - speed;
@@ -163,11 +190,11 @@ function moveBees() {//get speed input field value
         isHit(bees[i], bear); //we add this to count stings
     }
 }
-function updateBees() { // update loop for game
+function updateBees() { // update the position of the bees periodically
     //move the bees randomly
     moveBees();
     //use a fixed update period
-    let period = 10;//modify this to control refresh period
+    let period = 10;
     //update the timer for the next move
     updateTimer = setTimeout('updateBees()', period);
 }
@@ -176,7 +203,7 @@ function isHit(defender, offender) {
         let score = hits.innerHTML;
         score = Number(score) + 1; //increment the score
         hits.innerHTML = score; //display the new score
-        //calculate longest duration
+        //calculate the longest duration
         let newStingTime = new Date();
         let thisDuration = newStingTime - lastStingTime;
         lastStingTime = newStingTime;
@@ -189,20 +216,18 @@ function isHit(defender, offender) {
         document.getElementById("duration").innerHTML = longestDuration;
     }
 }
-
-
 function overlap(element1, element2) {
     //consider the two rectangles wrapping the two elements
     //rectangle of the first element
-    left1 = element1.htmlElement.offsetLeft;
-    top1 = element1.htmlElement.offsetTop;
-    right1 = element1.htmlElement.offsetLeft + element1.htmlElement.offsetWidth;
-    bottom1 = element1.htmlElement.offsetTop + element1.htmlElement.offsetHeight;
+    left1 = element1.htmlElement.offsetLeft; //e1x
+    top1 = element1.htmlElement.offsetTop; //e1y
+    right1 = element1.htmlElement.offsetLeft + element1.htmlElement.offsetWidth; //r1x
+    bottom1 = element1.htmlElement.offsetTop + element1.htmlElement.offsetHeight; //r1y
     //rectangle of the second element
     left2 = element2.htmlElement.offsetLeft; //e2x
     top2 = element2.htmlElement.offsetTop; //e2y
-    right2 = element2.htmlElement.offsetLeft + element2.htmlElement.offsetWidth;
-    bottom2 = element2.htmlElement.offsetTop + element2.htmlElement.offsetHeight;
+    right2 = element2.htmlElement.offsetLeft + element2.htmlElement.offsetWidth; //r2x
+    bottom2 = element2.htmlElement.offsetTop + element2.htmlElement.offsetHeight; //r2y
     //calculate the intersection of the two rectangles
     x_intersect = Math.max(0, Math.min(right1, right2) - Math.max(left1, left2));
     y_intersect = Math.max(0, Math.min(bottom1, bottom2) - Math.max(top1, top2));
@@ -212,4 +237,17 @@ function overlap(element1, element2) {
         return false;
     }
     return true;
+}
+function addBee() {
+    let nbBees = document.getElementById("nbBees").value; //get number of bees
+    nbBees = Number(nbBees);
+    if (isNaN(nbBees)) {
+        window.alert("Invalid number of bees");
+        return;
+    }
+    nbBees++; //increment the number of bees
+    document.getElementById("nbBees").value = nbBees; //display number of bees
+    let bee = new Bee(nbBees); //create the bee object and its img element
+    bee.display();
+    bees.push(bee); //add the bee in the array of bees
 }
